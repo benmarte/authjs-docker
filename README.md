@@ -13,7 +13,7 @@ Prerequisites:
 
 > Make sure to rename `.env.example` to `.env.local` otherwise you won't be able to load any of the environement variables
 
-Run `docker-compose -f docker-compose-webapp.yml up` this will spin up 3 containers:
+Run `docker-compose up` this will spin up 3 containers:
 
 - keycloak: runs the keycloak instance
 - keycloak-postgres: runs the postgres database for keycloak
@@ -68,7 +68,7 @@ I added a logger entry in [auth.ts](./webapp/auth.ts#L21) with some console logs
 
 ## How to test running the webapp locally
 
-To run keycloak simply run `docker-compose up` and follow the steps to [Create a user for the webapp in keycloak](#create-a-user-for-the-webapp-in-keycloak), open a second terminal window and make sure you `cd /webapp` and then run `npm run dev` to start the webapp locally.
+To run keycloak simply run `docker-compose -f docker-compose-slim.yml up` and follow the steps to [Create a user for the webapp in keycloak](#create-a-user-for-the-webapp-in-keycloak), open a second terminal window and make sure you `cd /webapp` and then run `npm run dev` to start the webapp locally.
 
 Use the credentials you used when you created the user in keycloak and you should be able to login without any issues.
 
