@@ -1,0 +1,43 @@
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.4
+    env_file:
+      - ./webapp/.env.example
+    volumes:
+      - ./keycloak/import:/opt/keycloak/data/import
+    depends_on:
+      - keycloak-postgres
+    ports:
+      - "8080:8080"
+      - "8787:8787"
+    command:
+      - start-dev
+      - --features=admin-fine-grained-authz
+      - --import-realm
+      - --proxy-headers=forwarded
+    networks:
+      - appnet
+
+  keycloak-postgres:
+    image: postgres:16
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", "keycloak", "-U", "admin"]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    env_file:
+      - ./webapp/.env.example
+    volumes:
+      - ./postgres/db/keycloak:/db/keycloak
+    ports:
+      - "5432:5432"
+    networks:
+      - appnet
+
+networks:
+  appnet:
+    driver: bridge
+
+volumes:
+  node_modules: {}
