@@ -11,13 +11,11 @@ Prerequisites:
 
 ## How to test in Docker
 
-> Make sure to rename `.env.example` to `.env.local` otherwise you won't be able to load any of the environement variables
-
 Run `docker-compose up` this will spin up 3 containers:
 
 - keycloak: runs the keycloak instance
 - keycloak-postgres: runs the postgres database for keycloak
-- webapp: runs the nexjs app
+- webapp: runs the authjs-docker-test app
 
 ## Create a user for the webapp in keycloak
 
@@ -56,7 +54,7 @@ Enter the username and password you used for the user you created in keycloak an
 
 ![webapp login](./webapp/public/login.png)
 
-The first time you login to the webapp keycloak will ask you to update you account information. Enter the information and click `Submit`
+The first time you login to the webapp, keycloak will ask you to update your account information. Enter the information and click `Submit`
 
 ![update account](./webapp/public/update-account.png)
 
