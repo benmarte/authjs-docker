@@ -30,21 +30,21 @@ password: admin
 
 Once you login proceed to click on the `webapp` realm in the left navigation dropdown.
 
-![webapp realm](./webapp/public/webapp-realm.png)
+![webapp realm](./assets/webapp-realm.png)
 
 Then click on `Users`, on the users page click on `Create new user`.
 
-![create new user](./webapp/public/create-new-user.png)
+![create new user](./assets/create-new-user.png)
 
 Enter the username you want to use to login to the `webapp` I'm using `admin` to keep it simple.
 
-![username](./webapp/public/username.png)
+![username](./assets/username.png)
 
 Once the user is created, click on the `Credentials` tab and click on `Set password`. Enter the `password` you want to use in the `password` and in the `password confirmation` input boxes, uncheck the temporary toggle switch and click `Save` then click on `Save password` to confirm.
 
 This concludes our keycloak setup.
 
-![password](./webapp/public/password.png)
+![password](./assets/password.png)
 
 ## Logging in to the webapp
 
@@ -52,25 +52,25 @@ Now that you have created the `admin` user proceed to login to the webapp, open 
 
 Enter the username and password you used for the user you created in keycloak and click `Sign In`.
 
-![webapp login](./webapp/public/login.png)
+![webapp login](./assets/login.png)
 
 The first time you login to the webapp, keycloak will ask you to update your account information. Enter the information and click `Submit`
 
-![update account](./webapp/public/update-account.png)
+![update account](./assets/update-account.png)
 
 Once you update your account info you will encounter the `ECONNREFUSED` error which prevents you from using the webapp.
 
-![server error](./webapp/public/server-error.png)
+![server error](./assets/server-error.png)
 
 I added a logger entry in [auth.ts](./webapp/auth.ts#L21) with some console logs so it's easier to debug the issue in docker.
 
 ## How to test running the webapp locally
 
-To run keycloak simply run `docker-compose -f docker-compose-slim.yml up` and follow the steps to [Create a user for the webapp in keycloak](#create-a-user-for-the-webapp-in-keycloak), open a second terminal window and make sure you `cd /webapp` and then run `npm run dev` to start the webapp locally.
+To run keycloak simply run `docker-compose -f docker-compose-slim.yml up` and follow the steps to [Create a user for the webapp in keycloak](#create-a-user-for-the-webapp-in-keycloak), open a second terminal window and make sure you `cd /nextjs-auth-example` and rename `.env.dev.example` to `.env.local` then run `npm run dev` to start the webapp locally.
 
 Use the credentials you used when you created the user in keycloak and you should be able to login without any issues.
 
-![loggedin](./webapp/public/loggedin.png)
+![loggedin](./assets/loggedin.png)
 
 ## Notes
 
@@ -84,6 +84,21 @@ AUTH_KEYCLOAK_ISSUER
 
 Using only these 3 values works fine when running it locally but when you try running it in Docker you will run into an error because authjs is not passing the authorization url and it fails with the same `ECONNREFUSED` error as soon as you click the sign-in button.
 
-![server error](./webapp/public/server-error.png)
+If you replace the keycloak provider in [`auth.ts`](./nextjs-auth-example/auth.ts#L72) with the following you will get further in the process to login but it still fails with the same error.
+
+```
+Keycloak({
+  clientId: process.env.AUTH_KEYCLOAK_ID,
+  clientSecret: process.env.AUTH_SECRET,
+  issuer: `${process.env.AUTH_KEYCLOAK_ISSUER}`,
+  // these are needed in order to have authjs get further in the authorization process in docker
+  authorization: `${process.env.AUTH_KEYCLOAK_ISSUER}/protocol/openid-connect/auth`,
+  wellKnown: `${process.env.AUTH_KEYCLOAK_ISSUER}/.well-known/openid-configuration`,
+  token: `${process.env.AUTH_KEYCLOAK_ISSUER}/protocol/openid-connect/token`,
+  userinfo: `${process.env.AUTH_KEYCLOAK_ISSUER}/protocol/openid-connect/userinfo`,
+})
+```
+
+![server error](./assets/server-error.png)
 
 Thanks for helping me debug this problem and hopefully we can get Authjs to work in Docker as it should.
