@@ -1,11 +1,27 @@
-# Nextjs, Authjs, Keycloak and Authentik in Docker
+# Next.js, Auth.js, Keycloak, and Authentik in Docker
 
-This is a repo to debug Authjs v5 in Docker to see why it doesn't work with the Keycloak provider.
+This repository aims to debug Auth.js v5 in Docker to determine why it doesn't work with the Keycloak provider.
 
-Prerequisites:
+## Table of Contents
+
+1. [Prerequisites](#prerequisites)
+2. [Running Authentik and Keycloak in Docker with Local Webapp](#running-authentik-and-keycloak-in-docker-with-local-webapp)
+3. [The Auth.js Docker Problem](#the-authjs-docker-problem)
+4. [Testing in Docker](#testing-in-docker)
+5. [Creating an Application and Provider in Authentik](#creating-an-application-and-provider-in-authentik)
+6. [Logging into the Webapp with Authentik](#logging-into-the-webapp-with-authentik)
+7. [Testing Authentik in Docker with Local Webapp](#testing-authentik-in-docker-with-local-webapp)
+8. [Creating a User in Keycloak](#creating-a-user-in-keycloak)
+9. [Logging into the Webapp with Keycloak](#logging-into-the-webapp-with-keycloak)
+10. [Testing Keycloak in Docker with Local Webapp](#testing-keycloak-in-docker-with-local-webapp)
+11. [Notes](#notes)
+
+---
+
+## Prerequisites
 
 - [Docker](https://www.docker.com/products/docker-desktop/)
-- [Node](https://nodejs.org/en/download/package-manager)
+- [Node.js](https://nodejs.org/en/download/package-manager)
 - Edit your `/etc/hosts` file with the following entries:
   - `127.0.0.1 keycloak.local`
   - `127.0.0.1 webapp.local`
@@ -13,160 +29,228 @@ Prerequisites:
 
 ---
 
-## The problem
+## Running Authentik and Keycloak in Docker with Local Webapp
 
-Authjs does not work with the keycloak provider when running inside a docker container. If you run Keycloak in Docker and run the webapp locally using `npm run dev` everything works as intended.
+To run both Authentik and Keycloak in Docker, execute the following command:
+
+```sh
+docker-compose -f docker-compose-local.yml up
+```
+
+Follow the steps to [create a user for the webapp in Keycloak](#creating-a-user-in-keycloak) and [create an application and provider for the webapp in Authentik](#creating-an-application-and-provider-in-authentik).
+
+Then, open a second terminal window and navigate to the project directory:
+
+```sh
+cd /nextjs-auth-example
+```
+
+Rename `.env.example` to `.env.local`, replace the values for `AUTH_AUTHENTIK_CLIENT_ID` and `AUTH_AUTHENTIK_CLIENT_SECRET` in `.env.local`, and run:
+
+```sh
+npm run dev
+```
+
+This will start the webapp locally.
+
+Here is a short video demonstrating authentication working when both Authentik and Keycloak are running in Docker and the webapp is running locally. As shown, everything functions correctly with both providers. Now, let's address the issue.
+
+https://github.com/benmarte/authjs-docker/assets/693275/14649d72-7019-4793-b171-f78c716ff27f.mp4
+
+## The Auth.js Docker Problem
+
+Auth.js does not work with the Keycloak provider when running inside a Docker container.
 
 ---
 
-## How to test in Docker
+## Testing in Docker
 
-Run `docker-compose up` this will spin up 8 containers:
+Run the following command to start the containers:
 
-- authentik: runs the authentik instance
-- keycloak: runs the keycloak instance
-- postgres: runs the postgres database for keycloak
-- postgresql: runs the postgres database for authentik
-- redis: runs the redis instance for authentik
-- traefik: runs the docker reverse proxy
-- webapp: runs the authjs-docker-test app
-- worker: runs the authentik worker
+```sh
+docker-compose up
+```
+
+This will spin up 8 containers:
+
+- **authentik**: Runs the Authentik instance
+- **keycloak**: Runs the Keycloak instance
+- **postgres**: Runs the PostgreSQL database for Keycloak
+- **postgresql**: Runs the PostgreSQL database for Authentik
+- **redis**: Runs the Redis instance for Authentik
+- **traefik**: Runs the Docker reverse proxy
+- **webapp**: Runs the Auth.js Docker test app
+- **worker**: Runs the Authentik worker
 
 ---
 
-## Create an application and provider for the webapp in authentik
+## Creating an Application and Provider in Authentik
 
-Once authentik is up and running navigate to `http://authentik.local/if/flow/initial-setup/` to create your admin account.
+Once Authentik is up and running, navigate to `http://authentik.local/if/flow/initial-setup/` to create your admin account.
 
 ![admin account](./assets/authentik-admin.png)
 
-Click create new application and close the modal window, we will be using the `Create with wizard option`.
+Click "Create new application" and close the modal window. We will use the "Create with wizard" option.
 
 ![authentik wizard](./assets/authentik-wizard.png)
 
-Click on the `Create with wizard` button and enter `webapp` in the name field and click `next`.
+Click on the "Create with wizard" button, enter `webapp` in the name field, and click `next`.
 
 ![authentik provider](./assets/authentik-provider.png)
 
-In the `Provider type` select `OAuth2/OIDC (Open Authorization/OpenID Connect)` and click `next`.
+In the "Provider type" dropdown, select `OAuth2/OIDC (Open Authorization/OpenID Connect)` and click `next`.
 
 ![authentik oauth](./assets/authentik-oauth.png)
 
-In the `Provider configuration` section enter the following:
+In the "Provider configuration" section, enter the following:
 
-- Authentication flow: `default-authentication-flow (Welcome to authentik!)`
-- Authorization flow: `default-provider-authorization-explicit-consent (Authorize Application)`
-- Client type: `confidential`
-- Client ID: Copy whatever Authentik generated and paste it in the following line in [docker-compose](./docker-compose.yml#L153)
-- Client Secret: Copy whatever Authentik generated and paste it in the following line in [docker-compose](./docker-compose.yml#L154)
-- Redirect/URIs/Origin: `http://webapp.local/auth/callback/authentik`
+- **Authentication flow**: `default-authentication-flow (Welcome to Authentik!)`
+- **Authorization flow**: `default-provider-authorization-explicit-consent (Authorize Application)`
+- **Client type**: `confidential`
+- **Client ID**: Copy the generated ID and paste it into the corresponding line in [docker-compose.yml](./docker-compose.yml#L153)
+- **Client Secret**: Copy the generated secret and paste it into the corresponding line in [docker-compose.yml](./docker-compose.yml#L154)
+- **Redirect/URIs/Origin**: `http://webapp.local/auth/callback/authentik`
 
-> When running the webapp locally the value must be the following for: Redirect/URIs/Origin: `http://localhost:3000/auth/callback/authentik`
+> When running the webapp locally, use the following value for Redirect/URIs/Origin: `http://localhost:3000/auth/callback/authentik`
 
 ![authentik config](./assets/authentik-config.png)
 
 ![authentik config2](./assets/authentik-config-2.png)
 
-Click `Submit` to finish creating your application and provider. You should get the following message:
+Click `Submit` to finish creating your application and provider. You should see the following success message:
 
 ![authentik success](./assets/authentik-success.png)
 
-Now in your terminal where you ran `docker-compose up` press `ctrl + c` to stop the containers. Then run `docker-compose up` again to start the containers with the new changes.
+Now, in your terminal where you ran `docker-compose up`, press `Ctrl + C` to stop the containers. Then, run `docker-compose up` again to start the containers with the new changes.
 
 ---
 
-## Log in to the webapp with Authentik
+## Logging into the Webapp with Authentik
 
-Now that you have created the `admin` user proceed to login to the webapp, open `http://webapp.local` in your browser and click on the `Sign In` button, this will forward you to the sing in page so you can select which provider you want to login with.
+After creating the `admin` user, proceed to log into the webapp. Open `http://webapp.local` in your browser and click the `Sign In` button. You will be redirected to a sign-in page to select your login provider.
 
 ![providers](./assets/providers.png)
 
-Click on `Sign in with Authentik` this will redirect you to the authentik login page.
+Click `Sign in with Authentik`. This will redirect you to the Authentik login page.
 
 ![authentik login](./assets/authentik-login.png)
 
-Enter your credentials and you should be forwarded to the webapp and you should be able to see the session information.
+Enter your credentials, and you should be redirected to the webapp, where you can see your session information.
 
 ![authentik session](./assets/authentik-session.png)
 
 ---
 
-## Create a user for the webapp in keycloak
+## Testing Authentik in Docker with Local Webapp
 
-Once keycloak is up and running proceed to login to the keycloak admin interface by visiting `http://keycloak.local` in your browser.
+To run Authentik in Docker, execute:
 
-The credentials to login to keycloak are:
+```sh
+docker-compose -f docker-compose-authentik.yml up
+```
 
-```bash
+Follow the steps to [create an application and provider for the webapp in Authentik](#creating-an-application-and-provider-in-authentik), open a second terminal window, navigate to the project directory, and rename `.env.example` to `.env.local`. Replace the values for `AUTH_AUTHENTIK_CLIENT_ID` and `AUTH_AUTHENTIK_CLIENT_SECRET` in `.env.local`, and run:
+
+```sh
+npm run dev
+```
+
+Use the credentials you set when creating the application provider in Authentik to log in without any issues.
+
+![loggedin](./assets/authentik-loggedin.png)
+
+---
+
+## Creating a User in Keycloak
+
+Once Keycloak is up and running, log into the Keycloak admin interface by visiting `http://keycloak.local` in your browser.
+
+The credentials to log into Keycloak are:
+
+```sh
 username: admin
 password: admin
 ```
 
-Once you login proceed to click on the `webapp` realm in the left navigation dropdown.
+After logging in, select the `webapp` realm from the left navigation dropdown.
 
 ![webapp realm](./assets/webapp-realm.png)
 
-Then click on `Users`, on the users page click on `Create new user`.
+Then, click `Users` and on the users page, click `Create new user`.
 
 ![create new user](./assets/create-new-user.png)
 
-Enter the username you want to use to login to the `webapp` I'm using `admin` to keep it simple.
+Enter the username you want to use to log into the `webapp`. For simplicity, you can use `admin`.
 
 ![username](./assets/username.png)
 
-Once the user is created, click on the `Credentials` tab and click on `Set password`. Enter the `password` you want to use in the `password` and in the `password confirmation` input boxes, uncheck the temporary toggle switch and click `Save` then click on `Save password` to confirm.
+After creating the user, click the `Credentials` tab and then `Set password`. Enter the desired `password` and `password confirmation`, uncheck the temporary toggle switch, and click `Save`. Confirm by clicking `Save password`.
 
 ![password](./assets/password.png)
 
-This concludes our keycloak setup.
+This concludes the Keycloak setup.
 
 ---
 
-## Log in to the webapp with Keycoak
+## Logging into the Webapp with Keycloak
 
-Enter the username and password you used for the user you created in keycloak and click `Sign In`.
+Log into the webapp with the username and password you set in Keycloak and click `Sign In`.
 
 ![webapp login](./assets/login.png)
 
-The first time you login to the webapp, keycloak will ask you to update your account information. Enter the information and click `Submit`
+The first time you log into the webapp, Keycloak will ask you to update your account information. Enter the required information and click `Submit`.
 
 ![update account](./assets/update-account.png)
 
-Once you update your account info you will encounter the `ECONNREFUSED` error which prevents you from using the webapp.
+Once you update your account information, you will encounter the `ECONNREFUSED` error, preventing you from using the webapp.
 
 ![server error](./assets/server-error.png)
 
-> I added a logger entry in [auth.ts](./webapp/auth.ts#L21) with some console logs so it's easier to debug the issue in docker.
+> A logger entry has been added in [auth.ts](./webapp/auth.ts#L21) with console logs to facilitate debugging in Docker.
 
 ---
 
-## How to test running the keycloak in docker and the webapp locally
+## Testing Keycloak in Docker with Local Webapp
 
-To run keycloak simply run `docker-compose -f docker-compose-keycloak.yml up` and follow the steps to [Create a user for the webapp in keycloak](#create-a-user-for-the-webapp-in-keycloak), open a second terminal window and make sure you `cd /nextjs-auth-example` and rename `.env.example` to `.env.local` then run `npm run dev` to start the webapp locally.
+To run Keycloak in Docker, execute:
 
-Use the credentials you used when you created the user in keycloak and you should be able to login without any issues.
+```sh
+docker-compose -f docker-compose-keycloak.yml up
+```
+
+Follow the steps to [create a user for the webapp in Keycloak](#creating-a-user-in-keycloak), open a second terminal window, navigate to the project directory, and rename `.env.example` to `.env.local`. Then run:
+
+```sh
+npm run dev
+```
+
+Use the credentials you set in Keycloak to log in without any issues.
 
 ![loggedin](./assets/loggedin.png)
 
+---
+
 ## Notes
 
-The docs specify you only need 3 env vars:
+The documentation specifies that you only need three environment variables:
 
-```bash
+```sh
 AUTH_KEYCLOAK_ID
 AUTH_KEYCLOAK_SECRET
 AUTH_KEYCLOAK_ISSUER
 ```
 
-Using only these 3 values works fine when running it locally but when you try running it in Docker you will run into an error because authjs is not passing the authorization url and it fails with the same `ECONNREFUSED` error as soon as you click the sign-in button.
+Using only these three values works fine when running locally, but running in Docker results in an error because Auth.js does not pass the authorization URL, leading to the same `ECONNREFUSED` error when clicking the sign-in button.
 
-If you replace the keycloak provider in [`auth.ts`](./nextjs-auth-example/auth.ts#L72) with the following you will get further in the process to login but it still fails with the same error.
+If you replace the Keycloak provider in [`auth.ts`](./nextjs-auth-example/auth.ts#L72) with the following configuration, you will progress further in the authorization process in Docker, but the error persists.
 
-> Another thing to note when running the web app locally the keycloak client needs to be public otherwise it will not work with a confidential client in keycloak. When running keycloak in docker it simply does not work regardless if the client is public or confidential.
+> Note: When running the web app locally, the Keycloak client needs to be public; otherwise, it will not work with a confidential client in Keycloak. When running Keycloak in Docker, it does not work regardless of whether the client is public or confidential.
 
 ```javascript
 Keycloak({
-  clientId: process.env.AUTH_KEYCLOAK_ID,
+  clientId: process.env.AUTH
+
+_KEYCLOAK_ID,
   clientSecret: process.env.AUTH_SECRET,
   issuer: `${process.env.AUTH_KEYCLOAK_ISSUER}`,
   // these are needed in order to have authjs get further in the authorization process in docker
@@ -181,22 +265,4 @@ Keycloak({
 
 ---
 
-## How to test running authentik in docker and the webapp locally
-
-To run authentik simply run `docker-compose -f docker-compose-authentik.yml up` and follow the steps to [Create an application and provider for the webapp in authentik](#create-an-application-and-provider-for-the-webapp-in-authentik), open a second terminal window and make sure you `cd /nextjs-auth-example` and rename `.env.example` to `.env.local`, make sure to replace the values for `AUTH_AUTHENTIK_CLIENT_ID` and `AUTH_AUTHENTIK_CLIENT_SECRET` in `.env.local` then run `npm run dev` to start the webapp locally.
-
-Use the credentials you used when you created the application provider in authentik and you should be able to login without any issues.
-
-![loggedin](./assets/authentik-loggedin.png)
-
----
-
-## How to run authentik and keycloak in docker and the webapp locally
-
-To run both authentik and keycloak in docker run `docker-compose -f docker-compose-local.yml up` and follow the steps to [Create a user for the webapp in keycloak](#create-a-user-for-the-webapp-in-keycloak), and the instructions for [Create an application and provider for the webapp in authentik](#create-an-application-and-provider-for-the-webapp-in-authentik).
-
-Then open a second terminal window and make sure you `cd /nextjs-auth-example` and rename `.env.example` to `.env.local`, make sure to replace the values for `AUTH_AUTHENTIK_CLIENT_ID` and `AUTH_AUTHENTIK_CLIENT_SECRET` in `.env.local` then run `npm run dev` to start the webapp locally.
-
-Here is a short video of authentication working when both authentik and keycloak are running in docker and running the webapp locally.
-
-Thanks for helping me debug this problem and hopefully we can get Authjs to work in Docker as it should.
+Thank you for helping debug this problem. Hopefully, we can get Auth.js to work in Docker as intended.
