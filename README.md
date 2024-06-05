@@ -61,6 +61,10 @@ https://github.com/benmarte/authjs-docker/assets/693275/14649d72-7019-4793-b171-
 
 Auth.js does not work with the Keycloak provider when running inside a Docker container.
 
+Here is a short video of the issue.
+
+https://github.com/benmarte/authjs-docker/assets/693275/bd09110d-f314-4407-baec-0d0b200bae5f
+
 ---
 
 ## Testing in Docker
