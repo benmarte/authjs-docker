@@ -3,6 +3,7 @@ import "next-auth/jwt";
 
 // import Apple from "next-auth/providers/apple";
 // import Auth0 from "next-auth/providers/auth0";
+import Authentik from "next-auth/providers/authentik";
 // import AzureB2C from "next-auth/providers/azure-ad-b2c";
 // import BoxyHQSAML from "next-auth/providers/boxyhq-saml";
 // import Cognito from "next-auth/providers/cognito";
@@ -50,6 +51,11 @@ const config = {
   providers: [
     // Apple,
     // Auth0,
+    Authentik({
+      clientId: process.env.AUTH_AUTHENTIK_CLIENT_ID,
+      clientSecret: process.env.AUTH_AUTHENTIK_CLIENT_SECRET,
+      issuer: process.env.AUTH_AUTHENTIK_ISSUER,
+    }),
     // AzureB2C({
     //   clientId: process.env.AUTH_AZURE_AD_B2C_ID,
     //   clientSecret: process.env.AUTH_AZURE_AD_B2C_SECRET,
@@ -69,7 +75,16 @@ const config = {
     // GitLab,
     // Google,
     // Hubspot,
-    Keycloak,
+    Keycloak({
+      clientId: process.env.AUTH_KEYCLOAK_ID,
+      clientSecret: process.env.AUTH_SECRET,
+      issuer: `${process.env.AUTH_KEYCLOAK_ISSUER}`,
+      // these are needed in order to have authjs get further in the authorization process in docker
+      authorization: `${process.env.AUTH_KEYCLOAK_ISSUER}/protocol/openid-connect/auth`,
+      wellKnown: `${process.env.AUTH_KEYCLOAK_ISSUER}/.well-known/openid-configuration`,
+      token: `${process.env.AUTH_KEYCLOAK_ISSUER}/protocol/openid-connect/token`,
+      userinfo: `${process.env.AUTH_KEYCLOAK_ISSUER}/protocol/openid-connect/userinfo`,
+    }),
     // LinkedIn,
     // Netlify,
     // Okta,
@@ -94,7 +109,7 @@ const config = {
     // }),
     // Zoom,
   ],
-  basePath: "/auth",
+  // basePath: "/auth",
   callbacks: {
     authorized({ request, auth }) {
       const { pathname } = request.nextUrl;
